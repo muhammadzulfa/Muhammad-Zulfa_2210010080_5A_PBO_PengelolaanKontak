@@ -17,12 +17,14 @@ public class SQLiteConnection {
         Connection conn = null;
         try {
             // Path file database SQLite
-            String url = "jdbc:sqlite:kontak.db";
+            String url = "jdbc:sqlite:db/kontak.db";
             conn = DriverManager.getConnection(url);
+            
             System.out.println("Koneksi berhasil!");
         } catch (SQLException e) {
             System.out.println("Koneksi gagal: " + e.getMessage());
         }
+        
         return conn;
     }
 }
