@@ -1,5 +1,11 @@
 import javax.swing.*;
 import java.awt.event.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,8 +54,8 @@ public class Main extends javax.swing.JFrame {
         btnSimpan = new javax.swing.JButton();
         txtKataKunci = new javax.swing.JTextField();
         btnCari = new javax.swing.JButton();
-        jButton2 = new javax.swing.JButton();
-        jButton3 = new javax.swing.JButton();
+        btnImporToCSV = new javax.swing.JButton();
+        btnEksporToCSV = new javax.swing.JButton();
         btnHapus = new javax.swing.JButton();
         jLabel5 = new javax.swing.JLabel();
         jScrollPane2 = new javax.swing.JScrollPane();
@@ -130,9 +136,19 @@ public class Main extends javax.swing.JFrame {
             }
         });
 
-        jButton2.setText("Impor .CSV");
+        btnImporToCSV.setText("Impor .CSV");
+        btnImporToCSV.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnImporToCSVActionPerformed(evt);
+            }
+        });
 
-        jButton3.setText("Ekspor .CSV");
+        btnEksporToCSV.setText("Ekspor .CSV");
+        btnEksporToCSV.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnEksporToCSVActionPerformed(evt);
+            }
+        });
 
         btnHapus.setForeground(new java.awt.Color(255, 51, 51));
         btnHapus.setText("Hapus");
@@ -175,9 +191,9 @@ public class Main extends javax.swing.JFrame {
                     .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jButton3)
+                                .addComponent(btnEksporToCSV)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(jButton2))
+                                .addComponent(btnImporToCSV))
                             .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 711, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGroup(jPanel1Layout.createSequentialGroup()
                             .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 157, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -229,8 +245,8 @@ public class Main extends javax.swing.JFrame {
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 417, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButton2)
-                    .addComponent(jButton3))
+                    .addComponent(btnImporToCSV)
+                    .addComponent(btnEksporToCSV))
                 .addContainerGap(14, Short.MAX_VALUE))
         );
 
@@ -397,6 +413,87 @@ public class Main extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_txtNoTeleponKeyTyped
 
+    private void btnEksporToCSVActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEksporToCSVActionPerformed
+        // Membuka dialog untuk memilih lokasi dan nama file CSV
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Pilih Lokasi untuk Menyimpan CSV");
+        fileChooser.setSelectedFile(new File("kontak.csv"));
+
+        int userSelection = fileChooser.showSaveDialog(this);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File fileToSave = fileChooser.getSelectedFile();
+
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileToSave))) {
+                // Tulis header kolom
+                writer.write("ID,Nama,Kategori,No_Telp\n");
+
+                // Tulis data tabel
+                DefaultTableModel model = (DefaultTableModel) tblKontak.getModel();
+                for (int i = 0; i < model.getRowCount(); i++) {
+                    StringBuilder row = new StringBuilder();
+                    for (int j = 0; j < model.getColumnCount(); j++) {
+                        row.append(model.getValueAt(i, j).toString());
+                        if (j < model.getColumnCount() - 1) row.append(",");
+                    }
+                    writer.write(row.toString());
+                    writer.newLine();
+                }
+                JOptionPane.showMessageDialog(this, "Data berhasil diekspor ke " + fileToSave.getAbsolutePath(), "Ekspor Berhasil", JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(this, "Terjadi kesalahan saat menulis file: " + e.getMessage(), "Kesalahan Ekspor", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }//GEN-LAST:event_btnEksporToCSVActionPerformed
+
+    private void btnImporToCSVActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnImporToCSVActionPerformed
+        // Membuka dialog untuk memilih file CSV
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Pilih File CSV untuk Diimpor");
+
+        int userSelection = fileChooser.showOpenDialog(this);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File fileToOpen = fileChooser.getSelectedFile();
+
+            try (BufferedReader reader = new BufferedReader(new FileReader(fileToOpen));
+                 Connection conn = SQLiteConnection.connect()) {
+
+                // Truncate tabel kontak sebelum mengimpor data baru
+                String truncateSQL = "DELETE FROM kontak"; // Menggunakan DELETE, SQLite tidak mendukung TRUNCATE
+                Statement stmt = conn.createStatement();
+                stmt.executeUpdate(truncateSQL);
+
+                // Siapkan query untuk insert data baru
+                String sql = "INSERT INTO kontak (nama, kategori, no_telp) VALUES (?, ?, ?)";
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+
+                String line;
+                // Lewati baris pertama jika itu adalah header
+                reader.readLine(); 
+
+                while ((line = reader.readLine()) != null) {
+                    // Memisahkan data berdasarkan koma (CSV format)
+                    String[] row = line.split(",");
+
+                    // Memastikan bahwa baris memiliki jumlah kolom yang benar
+                    if (row.length == 4) {
+                        pstmt.setString(1, row[1]);  // Nama (kolom ke-2 dalam CSV)
+                        pstmt.setString(2, row[2]);  // Kategori (kolom ke-3 dalam CSV)
+                        pstmt.setString(3, row[3]);  // No. Telepon (kolom ke-4 dalam CSV)
+
+                        // Menjalankan query insert untuk setiap baris
+                        pstmt.executeUpdate();
+                    }
+                }
+                JOptionPane.showMessageDialog(this, "Data berhasil diimpor dari " + fileToOpen.getAbsolutePath(), "Impor Berhasil", JOptionPane.INFORMATION_MESSAGE);
+                getAllData(null); // Memperbarui tabel setelah data diimpor
+            } catch (IOException | SQLException e) {
+                JOptionPane.showMessageDialog(this, "Terjadi kesalahan saat membaca file atau memasukkan data: " + e.getMessage(), "Kesalahan Impor", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }//GEN-LAST:event_btnImporToCSVActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -434,11 +531,11 @@ public class Main extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnCari;
+    private javax.swing.JButton btnEksporToCSV;
     private javax.swing.JButton btnHapus;
+    private javax.swing.JButton btnImporToCSV;
     private javax.swing.JButton btnSimpan;
     private javax.swing.JComboBox<String> cbbKategori;
-    private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;

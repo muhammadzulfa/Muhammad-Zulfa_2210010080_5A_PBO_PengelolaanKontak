@@ -59,9 +59,9 @@
                       <Group type="103" groupAlignment="0" max="-2" attributes="0">
                           <Group type="103" alignment="0" groupAlignment="1" attributes="0">
                               <Group type="102" alignment="1" attributes="0">
-                                  <Component id="jButton3" min="-2" max="-2" attributes="0"/>
+                                  <Component id="btnEksporToCSV" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace type="unrelated" max="-2" attributes="0"/>
-                                  <Component id="jButton2" min="-2" max="-2" attributes="0"/>
+                                  <Component id="btnImporToCSV" min="-2" max="-2" attributes="0"/>
                               </Group>
                               <Component id="jScrollPane1" alignment="0" min="-2" pref="711" max="-2" attributes="0"/>
                           </Group>
@@ -127,8 +127,8 @@
                   <Component id="jScrollPane1" min="-2" pref="417" max="-2" attributes="0"/>
                   <EmptySpace type="separate" max="-2" attributes="0"/>
                   <Group type="103" groupAlignment="3" attributes="0">
-                      <Component id="jButton2" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="jButton3" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="btnImporToCSV" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="btnEksporToCSV" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace pref="14" max="32767" attributes="0"/>
               </Group>
@@ -251,15 +251,21 @@
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnCariActionPerformed"/>
           </Events>
         </Component>
-        <Component class="javax.swing.JButton" name="jButton2">
+        <Component class="javax.swing.JButton" name="btnImporToCSV">
           <Properties>
             <Property name="text" type="java.lang.String" value="Impor .CSV"/>
           </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnImporToCSVActionPerformed"/>
+          </Events>
         </Component>
-        <Component class="javax.swing.JButton" name="jButton3">
+        <Component class="javax.swing.JButton" name="btnEksporToCSV">
           <Properties>
             <Property name="text" type="java.lang.String" value="Ekspor .CSV"/>
           </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnEksporToCSVActionPerformed"/>
+          </Events>
         </Component>
         <Component class="javax.swing.JButton" name="btnHapus">
           <Properties>
