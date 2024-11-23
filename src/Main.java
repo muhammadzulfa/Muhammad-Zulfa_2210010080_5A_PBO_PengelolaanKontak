@@ -1,7 +1,11 @@
 import javax.swing.*;
 import java.awt.event.*;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import javax.swing.table.DefaultTableModel;
+import java.util.List;
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
@@ -97,6 +101,11 @@ public class Main extends javax.swing.JFrame {
         jLabel4.setText("Nomor Telepon:");
 
         cbbKategori.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "- Pilih Kategori -", "Keluarga", "Teman", "Teman Dekat", "Rekan Kerja", "Pasangan", "Dosen" }));
+        cbbKategori.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                cbbKategoriItemStateChanged(evt);
+            }
+        });
 
         btnSimpan.setText("Simpan");
         btnSimpan.addActionListener(new java.awt.event.ActionListener() {
@@ -106,6 +115,11 @@ public class Main extends javax.swing.JFrame {
         });
 
         btnCari.setText("Cari");
+        btnCari.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCariActionPerformed(evt);
+            }
+        });
 
         jButton2.setText("Impor .CSV");
 
@@ -217,7 +231,7 @@ public class Main extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
-        getAllData();
+        getAllData(null);
     }//GEN-LAST:event_formWindowOpened
 
     private void btnSimpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanActionPerformed
@@ -236,7 +250,7 @@ public class Main extends javax.swing.JFrame {
                 // Eksekusi query
                 int rowsInserted = pstmt.executeUpdate();
                 if (rowsInserted > 0) {
-                    getAllData();
+                    getAllData(null);
                     JOptionPane.showMessageDialog(null, "Data telah disimpan!", "Berhasil", JOptionPane.INFORMATION_MESSAGE);
                 }
             } catch (SQLException e) {
@@ -257,7 +271,7 @@ public class Main extends javax.swing.JFrame {
                 // Eksekusi query
                 int rowsUpdated = pstmt.executeUpdate();
                 if (rowsUpdated > 0) {
-                    getAllData(); // Memperbarui data pada tampilan
+                    getAllData(null); // Memperbarui data pada tampilan
                     JOptionPane.showMessageDialog(null, "Data berhasil diperbarui!", "Berhasil", JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     JOptionPane.showMessageDialog(null, "Tidak ada data yang diperbarui.", "Gagal", JOptionPane.WARNING_MESSAGE);
@@ -305,7 +319,7 @@ public class Main extends javax.swing.JFrame {
                     // Eksekusi query
                     int rowsDeleted = pstmt.executeUpdate();
                     if (rowsDeleted > 0) {
-                        getAllData(); // Memperbarui tampilan data setelah penghapusan
+                        getAllData(null); // Memperbarui tampilan data setelah penghapusan
                         JOptionPane.showMessageDialog(null, "Data berhasil dihapus!", "Berhasil", JOptionPane.INFORMATION_MESSAGE);
                     } else {
                         JOptionPane.showMessageDialog(null, "Data tidak ditemukan untuk dihapus.", "Gagal", JOptionPane.WARNING_MESSAGE);
@@ -321,6 +335,33 @@ public class Main extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Penghapusan dibatalkan.", "Dibatalkan", JOptionPane.INFORMATION_MESSAGE);
         }
     }//GEN-LAST:event_btnHapusActionPerformed
+
+    private void cbbKategoriItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbbKategoriItemStateChanged
+        if (cbbKategori.getSelectedItem() != "- Pilih Kategori -") {
+            Map<String, Object> searchParams = new HashMap<>();
+            searchParams.put("kategori", cbbKategori.getSelectedItem().toString());
+            searchParams.put("nama", txtKataKunci.getText());
+            
+            getAllData(searchParams);
+        } else {
+            getAllData(null);
+        }
+    }//GEN-LAST:event_cbbKategoriItemStateChanged
+
+    private void btnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCariActionPerformed
+        if (cbbKategori.getSelectedItem() != "- Pilih Kategori -") {
+            Map<String, Object> searchParams = new HashMap<>();
+            searchParams.put("kategori", cbbKategori.getSelectedItem().toString());
+            searchParams.put("nama", txtKataKunci.getText());
+            
+            getAllData(searchParams);
+        } else {
+            Map<String, Object> searchParams = new HashMap<>();
+            searchParams.put("nama", txtKataKunci.getText());
+            
+            getAllData(searchParams);
+        }
+    }//GEN-LAST:event_btnCariActionPerformed
 
     /**
      * @param args the command line arguments
@@ -379,16 +420,62 @@ public class Main extends javax.swing.JFrame {
     private javax.swing.JTextField txtNoTelepon;
     // End of variables declaration//GEN-END:variables
 
-    private void getAllData() {
+    private void getAllData(Map<String, Object> searchParams) {
         try (Connection conn = SQLiteConnection.connect()) {
             if (conn != null) {
-                String sql = "SELECT * FROM kontak";
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery(sql);
+                // Query dasar
+                StringBuilder sql = new StringBuilder("SELECT * FROM kontak");
 
-                // Uraikan ke tabel
+                // Menyusun query berdasarkan parameter pencarian
+                if (searchParams != null && !searchParams.isEmpty()) {
+                    sql.append(" WHERE ");
+                    boolean first = true;
+
+                    // Iterasi melalui searchParams untuk menambahkan kondisi WHERE
+                    for (Map.Entry<String, Object> entry : searchParams.entrySet()) {
+                        String column = entry.getKey();
+                        Object value = entry.getValue();
+
+                        if (!first) {
+                            sql.append(" AND ");
+                        }
+                        first = false;
+
+                        // Tentukan query LIKE untuk pencarian teks
+                        if (value instanceof String) {
+                            sql.append(column).append(" LIKE ?");
+                        }
+                        // Tentukan query untuk pencarian angka atau jenis lain
+                        else if (value instanceof Integer) {
+                            sql.append(column).append(" = ?");
+                        }
+                        // Tambahkan kondisi untuk tipe lain sesuai kebutuhan
+                    }
+                }
+
+                // Siapkan PreparedStatement
+                PreparedStatement pstmt = conn.prepareStatement(sql.toString());
+
+                // Jika ada parameter pencarian, set parameter untuk PreparedStatement
+                if (searchParams != null && !searchParams.isEmpty()) {
+                    int index = 1;
+                    for (Map.Entry<String, Object> entry : searchParams.entrySet()) {
+                        Object value = entry.getValue();
+                        if (value instanceof String) {
+                            pstmt.setString(index++, "%" + value + "%");
+                        } else if (value instanceof Integer) {
+                            pstmt.setInt(index++, (Integer) value);
+                        }
+                        // Tentukan penanganan tipe lain sesuai kebutuhan
+                    }
+                }
+
+                ResultSet rs = pstmt.executeQuery();
+
+                // Uraikan data ke tabel
                 DefaultTableModel model = (DefaultTableModel) tblKontak.getModel();
-                model.setRowCount(0);
+                model.setRowCount(0);  // Bersihkan tabel sebelumnya
+
                 while (rs.next()) {
                     Object[] row = new Object[4];
                     row[0] = rs.getInt("id");
