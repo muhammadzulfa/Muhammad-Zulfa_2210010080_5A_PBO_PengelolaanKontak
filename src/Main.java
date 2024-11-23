@@ -107,6 +107,15 @@ public class Main extends javax.swing.JFrame {
             }
         });
 
+        txtNoTelepon.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                txtNoTeleponKeyPressed(evt);
+            }
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                txtNoTeleponKeyTyped(evt);
+            }
+        });
+
         btnSimpan.setText("Simpan");
         btnSimpan.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -362,6 +371,31 @@ public class Main extends javax.swing.JFrame {
             getAllData(searchParams);
         }
     }//GEN-LAST:event_btnCariActionPerformed
+
+    private void txtNoTeleponKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtNoTeleponKeyPressed
+        
+    }//GEN-LAST:event_txtNoTeleponKeyPressed
+
+    private void txtNoTeleponKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtNoTeleponKeyTyped
+        // Ambil karakter yang dimasukkan
+        char keyChar = evt.getKeyChar();
+
+        // Memeriksa apakah karakter yang dimasukkan adalah angka atau bukan
+        if (!Character.isDigit(keyChar) && keyChar != KeyEvent.VK_BACK_SPACE) {
+            // Jika bukan angka atau tombol backspace, batalkan input
+            evt.consume();  // Menghentikan input selain angka
+            JOptionPane.showMessageDialog(this, "Hanya angka yang diperbolehkan!", "Peringatan", JOptionPane.WARNING_MESSAGE);
+        }
+
+        // Validasi panjang nomor telepon Indonesia (max 12 digit dan min 9 digit)
+        String nomorTelepon = txtNoTelepon.getText() + keyChar;  // Menambahkan karakter yang baru dimasukkan
+
+        if (nomorTelepon.length() > 12) {
+            // Jika lebih dari 12 digit, hentikan input
+            evt.consume();
+            JOptionPane.showMessageDialog(this, "Nomor telepon tidak boleh lebih dari 12 digit.", "Peringatan", JOptionPane.WARNING_MESSAGE);
+        }
+    }//GEN-LAST:event_txtNoTeleponKeyTyped
 
     /**
      * @param args the command line arguments
