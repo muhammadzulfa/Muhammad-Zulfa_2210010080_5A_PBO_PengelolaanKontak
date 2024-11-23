@@ -12,7 +12,9 @@ import javax.swing.table.DefaultTableModel;
  * @author mhmmd
  */
 public class Main extends javax.swing.JFrame {
-
+    private boolean isEdit = false;
+    private int idEdit;
+    
     /**
      * Creates new form Main
      */
@@ -79,6 +81,11 @@ public class Main extends javax.swing.JFrame {
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
                 return canEdit [columnIndex];
+            }
+        });
+        tblKontak.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tblKontakMouseClicked(evt);
             }
         });
         jScrollPane1.setViewportView(tblKontak);
@@ -209,26 +216,71 @@ public class Main extends javax.swing.JFrame {
     }//GEN-LAST:event_formWindowOpened
 
     private void btnSimpanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSimpanActionPerformed
-        try (Connection conn = SQLiteConnection.connect()) {
+        // Deteksi mode sedang insert atau update
+        if (!isEdit) {
+            // Mode insert
+            try (Connection conn = SQLiteConnection.connect()) {
+                String sql = "INSERT INTO kontak (nama, kategori, no_telp) VALUES (?, ?, ?)";
+                PreparedStatement pstmt = conn.prepareStatement(sql);
 
-            String sql = "INSERT INTO kontak (nama, kategori, no_telp) VALUES (?, ?, ?)";
-            PreparedStatement pstmt = conn.prepareStatement(sql);
-            
-            // Set nilai untuk parameter query
-            pstmt.setString(1, txtNama.getText());        
-            pstmt.setString(2, listKategori.getSelectedValue());
-            pstmt.setString(3, txtNoTelepon.getText());
+                // Set nilai untuk parameter query
+                pstmt.setString(1, txtNama.getText());        
+                pstmt.setString(2, listKategori.getSelectedValue());
+                pstmt.setString(3, txtNoTelepon.getText());
 
-            // Eksekusi query
-            int rowsInserted = pstmt.executeUpdate();
-            if (rowsInserted > 0) {
-                getAllData();
-                JOptionPane.showMessageDialog(null, "Data telah disimpan!", "Berhasil", JOptionPane.INFORMATION_MESSAGE);
+                // Eksekusi query
+                int rowsInserted = pstmt.executeUpdate();
+                if (rowsInserted > 0) {
+                    getAllData();
+                    JOptionPane.showMessageDialog(null, "Data telah disimpan!", "Berhasil", JOptionPane.INFORMATION_MESSAGE);
+                }
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Terjadi kesalahan: " + e.getMessage());
             }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Terjadi kesalahan: " + e.getMessage());
+        } else {
+            // Mode Edit
+            try (Connection conn = SQLiteConnection.connect()) {
+                String sql = "UPDATE kontak SET nama = ?, kategori = ?, no_telp = ? WHERE id = ?";
+                PreparedStatement pstmt = conn.prepareStatement(sql);
+
+                // Set nilai untuk parameter query
+                pstmt.setString(1, txtNama.getText());
+                pstmt.setString(2, listKategori.getSelectedValue());
+                pstmt.setString(3, txtNoTelepon.getText());
+                pstmt.setInt(4, idEdit); // idEdit digunakan untuk menentukan data yang akan diperbarui
+
+                // Eksekusi query
+                int rowsUpdated = pstmt.executeUpdate();
+                if (rowsUpdated > 0) {
+                    getAllData(); // Memperbarui data pada tampilan
+                    JOptionPane.showMessageDialog(null, "Data berhasil diperbarui!", "Berhasil", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(null, "Tidak ada data yang diperbarui.", "Gagal", JOptionPane.WARNING_MESSAGE);
+                }
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Terjadi kesalahan: " + e.getMessage());
+            }
         }
+        
+
     }//GEN-LAST:event_btnSimpanActionPerformed
+
+    private void tblKontakMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tblKontakMouseClicked
+        int row = tblKontak.getSelectedRow();
+        
+        // Ambil record di row yang dipilih
+        Integer id = Integer.parseInt(tblKontak.getValueAt(row, 0).toString());
+        String nama = tblKontak.getValueAt(row, 1).toString();
+        String kategori = tblKontak.getValueAt(row, 2).toString();
+        String no_telp = tblKontak.getValueAt(row, 3).toString();
+        
+        // Parsing data ke form
+        txtNama.setText(nama);
+        txtNoTelepon.setText(no_telp);
+        
+        isEdit = true;
+        idEdit = id;
+    }//GEN-LAST:event_tblKontakMouseClicked
 
     /**
      * @param args the command line arguments
