@@ -113,6 +113,11 @@ public class Main extends javax.swing.JFrame {
 
         btnHapus.setForeground(new java.awt.Color(255, 51, 51));
         btnHapus.setText("Hapus");
+        btnHapus.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnHapusActionPerformed(evt);
+            }
+        });
 
         jLabel5.setText("Daftar Kontak:");
 
@@ -281,6 +286,41 @@ public class Main extends javax.swing.JFrame {
         isEdit = true;
         idEdit = id;
     }//GEN-LAST:event_tblKontakMouseClicked
+
+    private void btnHapusActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHapusActionPerformed
+        int confirm = JOptionPane.showConfirmDialog(this, 
+            "Apakah Anda yakin ingin menghapus data ini?", 
+            "Konfirmasi Hapus", 
+            JOptionPane.YES_NO_OPTION, 
+            JOptionPane.WARNING_MESSAGE);
+
+        // Jika pengguna memilih "Yes", lanjutkan dengan penghapusan
+        if (confirm == JOptionPane.YES_OPTION) {
+            if (idEdit != -1) { // Pastikan idEdit sudah valid
+                try (Connection conn = SQLiteConnection.connect()) {
+                    String sql = "DELETE FROM kontak WHERE id = ?";
+                    PreparedStatement pstmt = conn.prepareStatement(sql);
+                    pstmt.setInt(1, idEdit); // Menggunakan idEdit untuk menghapus data yang tepat
+
+                    // Eksekusi query
+                    int rowsDeleted = pstmt.executeUpdate();
+                    if (rowsDeleted > 0) {
+                        getAllData(); // Memperbarui tampilan data setelah penghapusan
+                        JOptionPane.showMessageDialog(null, "Data berhasil dihapus!", "Berhasil", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Data tidak ditemukan untuk dihapus.", "Gagal", JOptionPane.WARNING_MESSAGE);
+                    }
+                } catch (SQLException e) {
+                    JOptionPane.showMessageDialog(this, "Terjadi kesalahan: " + e.getMessage());
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Tidak ada data yang dipilih untuk dihapus.", "Gagal", JOptionPane.WARNING_MESSAGE);
+            }
+        } else {
+            // Jika pengguna memilih "No", batalkan penghapusan
+            JOptionPane.showMessageDialog(this, "Penghapusan dibatalkan.", "Dibatalkan", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }//GEN-LAST:event_btnHapusActionPerformed
 
     /**
      * @param args the command line arguments
